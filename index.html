@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Lantern Prowl – a cinematic 3D Halloween rooftop run</title>
+<meta name="description" content="A black cat with a will-o'-wisp flame on its tail races over the moonlit rooftops of a Halloween town and lights every jack-o'-lantern. Jump the gaps, dodge chimneys, slide under ghost-sheet laundry – fill the moon and make the Moonlight Leap: the whole town ignites. 10 nights, Endless Night, Easy/Medium/Hard, a kids mode and a Player 1 vs Player 2 duel.">
+<meta name="theme-color" content="#07060f">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Lantern Prowl – a 3D Halloween rooftop run">
+<meta property="og:description" content="A black cat lights every jack-o'-lantern in town – fill the moon and THE TOWN IGNITES. Built with Grok Bot.">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Lantern Prowl">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%F0%9F%90%88%E2%80%8D%E2%AC%9B%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-state="intro">
+<canvas id="game" aria-label="Lantern Prowl game"></canvas>
+<div id="flash"></div>
+<div id="pops"></div>
+<div id="banner"></div>
+<div id="hud">
+  <div class="chip wide"><small data-t="nightL">Night</small><b id="hNight">1</b></div>
+  <div class="chip gold"><small data-t="scoreL">Score</small><b id="hScore">0</b></div>
+  <div class="chip"><small data-t="chainL">Chain</small><b id="hChain">×1</b></div>
+  <div class="chip"><small data-t="livesL">Lives</small><b id="hLives">🐾🐾🐾</b></div>
+</div>
+<div id="moon" aria-hidden="true"><div class="disc"><i id="moonFill"></i></div><small data-t="moonL">Moon</small></div>
+<div id="prog"><i id="progFill"></i><span id="progTxt"></span></div>
+<div id="pw"></div>
+<div id="top">
+  <button id="btnQuit" class="pill" aria-label="Menu">✕</button>
+  <button id="btnSound" class="pill" aria-label="Sound">🔊</button>
+  <button id="btnLang" class="pill">DE</button>
+  <button id="btnGear" class="pill" aria-haspopup="dialog" aria-expanded="false" aria-label="Options">⚙</button>
+</div>
+<div id="toast"></div>
+<div id="lvCard"><small id="lcT"></small><div id="lcG"></div><em id="lcTip"></em></div>
+<div id="opening"><div id="oTitle"><span class="w1">LANTERN</span><span class="w2">PROWL</span><div id="oSub">5 days to Halloween 🎃</div></div></div>
+<button id="btnSkip" class="pill tapPlay">▶ Tap to play</button>
+<section id="menu" class="panel">
+  <div class="mTop">
+    <div class="kicker" data-t="countdown"></div>
+    <h1><span class="w1">LANTERN</span><span class="w2">PROWL</span></h1>
+    <p class="sub" data-t="tagline"></p>
+  </div>
+  <div class="mPlay">
+    <button id="btnPlay" class="play"><span class="pl" data-t="play"></span><em id="playL"></em></button>
+    <p class="tip credit" data-t="credit"></p>
+  </div>
+</section>
+<div id="moreBg"></div>
+<section id="more" class="panel" role="dialog" aria-labelledby="moreT">
+  <div class="sheetHead"><b id="moreT" data-t="moreT"></b><button id="btnMoreX" class="pill" aria-label="Close">✕</button></div>
+  <div class="lab labLv" data-t="nightsL"></div>
+  <div id="nights"></div>
+  <div class="row rowModes"><button id="btnEndless" class="big alt"><span data-t="endless"></span><em data-t="endlessInfo"></em></button><button id="btnDuel" class="big alt2"><span data-t="duel"></span><em data-t="duelInfo"></em></button></div>
+  <div class="lab labDiff" data-t="diffL"></div>
+  <div id="diff" role="group"><button data-d="easy" data-t="easy"></button><button data-d="medium" data-t="medium"></button><button data-d="hard" data-t="hard"></button></div>
+  <div class="row rowKids"><button id="btnKids" class="toggle" aria-pressed="false"><i></i><span data-t="kids"></span></button></div>
+  <div class="row rowOpt"><button id="btnQ2" class="opt"></button><button id="btnSound2" class="opt"></button><button id="btnIntro" class="opt" data-t="replay"></button></div>
+  <p class="tip kidsTip" data-t="kidsInfo"></p>
+  <p class="tip how"><span data-t="how1"></span> <span data-t="how2"></span> <span data-t="how3"></span></p>
+  <p class="tip keys" id="keysTip"></p>
+</section>
+<section id="handover" class="panel">
+  <div class="kicker" data-t="duelT"></div>
+  <h2 id="hoT"></h2>
+  <p class="sub" id="hoS"></p>
+  <button id="btnGo" class="big" data-t="duelGo"></button>
+</section>
+<section id="end" class="panel">
+  <div class="kicker" id="eNight"></div>
+  <h2 id="eTitle"></h2>
+  <div id="eScore" class="score">0</div>
+  <div id="eStars" class="stars"></div>
+  <div id="eBest" class="best"></div>
+  <div id="eStats" class="stats"></div>
+  <label class="name" id="eNameRow"><span data-t="nameL">Name on the card</span><input id="eName" maxlength="18" value="Player" autocomplete="off"></label>
+  <div class="row"><button id="btnCard" data-t="card"></button><button id="btnShare" data-t="share"></button></div>
+  <button id="btnNext" class="big" data-t="next"></button>
+  <div class="row"><button id="btnAgain" class="big alt" data-t="again"></button><button id="btnMenu" data-t="menu"></button></div>
+</section>
+<script src="js/sounds-src.js"></script>
+<script src="js/game.bundle.js"></script>
+</body>
+</html>

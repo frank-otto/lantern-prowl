@@ -1,0 +1,6 @@
+node_modules/
+.sfx/
+test/shots/
+test/last-run.log
+test/last-mobile-run.log
+CAT-PROGRESS.md
