@@ -137,3 +137,6 @@ body[data-more="1"][data-state=menu] #top { visibility: hidden; } /* the sheet h
 #lvCard, #lvCard.show, #toast, #banner, #pops { pointer-events: none; }
 /* WebKit (iOS Safari) can paint backdrop-filter children of an opacity:0 parent → really hide what is hidden */
 #toast:not(.show), #lvCard:not(.show) { visibility: hidden; }
+/* portrait phones: the level hint is a compact strip at the top edge (under HUD + moon), so the cat and the lane ahead stay free */
+#lvCard.compact { top: calc(max(8px, env(safe-area-inset-top)) + 104px); bottom: auto; padding: 6px 12px 7px; border-radius: 14px; width: max-content; max-width: calc(100vw - 128px); }
+#lvCard.compact small { font-size: 15px; line-height: 1.2; } #lvCard.compact div { font-size: 13px; margin-top: 2px; line-height: 1.25; } #lvCard.compact em { font-size: 12px; margin-top: 2px; line-height: 1.25; }

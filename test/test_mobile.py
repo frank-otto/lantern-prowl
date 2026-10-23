@@ -55,10 +55,14 @@ async def run(p, eng, dev, land, loc):
     info = await ev(pg, '[__lp.S.state, __lp.S.mode, __lp.S.ni, __lp.runner().state, document.getElementById("lvCard").classList.contains("show")]')
     check(f'{T} a single tap goes straight into Night 1 (runner running, short in-game hint card)', ok and info[:4] == ['play', 'night', 0, 'run'] and info[4], info)
     check(f'{T} sound unlocks on that first tap (sound on by default)', await until(pg, "__lp.audioState() !== 'none'", 5) and not await ev(pg, "document.getElementById('btnSound').textContent.includes('🔇')"), await ev(pg, '__lp.audioState()'))
+    hc = await ev(pg, """(() => { const e = document.getElementById('lvCard'), c = e.getBoundingClientRect(), k = __lp.C.g.getWorldPosition(new __lp._dbg.THREE.Vector3()), q = __lp.screen(k.x, k.y + .4, k.z), q2 = __lp.screen(k.x, k.y + .4, k.z - 8);
+      const hit = p => p.x > c.left - 10 && p.x < c.right + 10 && p.y > c.top - 30 && p.y < c.bottom + 30; return [e.classList.contains('compact'), Math.round(c.height), Math.round(c.top), hit(q), hit(q2)]; })()""")
+    if not land: check(f'{T} portrait: Night 1 hint is a compact card at the top (≤ 22 % of the height) and covers neither the cat nor the lane ahead', hc[0] and hc[1] <= H * .22 and hc[2] < H * .3 and not hc[3] and not hc[4], hc)
     await pg.wait_for_timeout(1500); await pg.screenshot(path=f'{OUT}{tag}-1-night1.png')
     j0 = await ev(pg, '__lp.log.length'); await pg.touchscreen.tap(W / 2, H * .6)
     jumped = await until(pg, f"__lp.log.slice({j0}).some(e => /wing|flap|whoosh|swish|fwoosh/.test(e.n)) || __lp.runner().air", 4)
     check(f'{T} the run is playable by touch (tap = jump)', jumped, await ev(pg, '[__lp.runner().state, __lp.runner().air]'))
+    check(f'{T} the hint card fades on the first input (or after ~3 s) and is then visibility:hidden', await until(pg, "getComputedStyle(document.getElementById('lvCard')).visibility === 'hidden'", 10), await ev(pg, "[getComputedStyle(document.getElementById('lvCard')).visibility, __lp.S.gt - (+document.getElementById('lvCard').dataset.t0)]"))
     hud = dict(await ev(pg, f'({HIT})(["#btnQuit", "#btnSound", "#btnLang"])')); badh = {k: v for k, v in hud.items() if v != 'ok'}
     check(f'{T} in-game buttons (✕ menu, sound, DE/EN) are tappable, nothing covers them', not badh, badh or hud)
     # ---------- 2) the start screen: one big PLAY, everything else behind the gear ----------

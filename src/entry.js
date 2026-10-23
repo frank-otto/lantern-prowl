@@ -170,7 +170,7 @@ function updateCamera(dt) {
 const LEAP_APEX = () => 9.5;
 // ---------------- input ----------------
 const press = { id: null, x: 0, y: 0, t: 0, sw: false };
-function act(a) { if (!RN || S.state !== 'play') return; RN.act(a); if (a === 'left' || a === 'right') A.sfx.lane(a === 'left' ? -1 : 1); S.hintT = Math.max(S.hintT, 0); }
+function act(a) { if (!RN || S.state !== 'play') return; RN.act(a); { const lc = $('lvCard'); if (lc.classList.contains('show') && S.gt - (+lc.dataset.t0) > .35) lc.classList.remove('show'); } if (a === 'left' || a === 'right') A.sfx.lane(a === 'left' ? -1 : 1); S.hintT = Math.max(S.hintT, 0); }
 function uiTarget(e) { return e.target && e.target.closest && e.target.closest('button, .panel, #top, input, label'); }
 canvas.addEventListener('pointerdown', e => { if (e.pointerType === 'touch' && !isTouch) { isTouch = true; applyLang(); } if (S.state !== 'play') return; press.id = e.pointerId; press.x = e.clientX; press.y = e.clientY; press.t = performance.now(); press.sw = false; });
 window.addEventListener('pointermove', e => { if (press.id !== e.pointerId || press.sw || S.state !== 'play') return; const dx = e.clientX - press.x, dy = e.clientY - press.y; const th = Math.max(22, Math.min(VW, VH) * .045);
@@ -217,7 +217,10 @@ function showEnd() { const duel = S.mode === 'duel', r = S.result; let title;
     : `<div>🎃 ${t('stLit')}: <b>${RN.lit}/${TR.lanterns}</b></div><div>🔗 ${t('stChain')}: <b>${RN.bestChain}</b></div><div>🌕 ${t('stLeaps')}: <b>${RN.leaps}</b></div><div>🐈‍⬛ ${t('stNear')}: <b>${RN.nears}</b></div><div>📏 ${t('stDist')}: <b>${Math.floor(RN.d)} m</b></div>`;
   $('btnNext').style.display = S.mode === 'night' && r === 'win' && S.ni < NIGHTS.length - 1 ? '' : 'none'; $('btnAgain').textContent = duel ? t('againD') : t('again'); $('eName').value = S.name; }
 function showLevelCard() { const N = nightOf(); $('lcT').textContent = S.mode === 'duel' ? `${t(S.player ? 'p2' : 'p1')} · ${t('duelT')}` : S.mode === 'endless' ? t('n_endless') : `${t('night')} ${S.ni + 1} · ${nightName()}`;
-  $('lcG').textContent = t('hintGoal'); $('lcTip').textContent = (S.ni === 0 || S.mode !== 'night' ? t(isTouch ? 'hintTouch' : 'hintKeys') + ' · ' : '') + t('tip_' + N.id); const el = $('lvCard'); el.classList.add('show'); el.dataset.t0 = S.gt; }
+  const el = $('lvCard'), compact = innerWidth < innerHeight * .85; el.classList.toggle('compact', compact); // portrait phones: small card at the top edge, short text
+  $('lcG').textContent = t('hintGoal'); const first = S.ni === 0 || S.mode !== 'night';
+  $('lcTip').textContent = compact ? (first ? t(isTouch ? 'hintShort' : 'hintKeys') : t('tip_' + N.id)) : (first ? t(isTouch ? 'hintTouch' : 'hintKeys') + ' · ' : '') + t('tip_' + N.id);
+  el.classList.add('show'); el.dataset.t0 = S.gt; }
 function hideLevelCard() { $('lvCard').classList.remove('show'); }
 function popAt(txt, col, big, at) { (window.__pops = window.__pops || []).push(txt); let x = 0, y = -VH * .12; if (at) { _sp.copy(at).project(camera); if (_sp.z < 1) { x = clamp(_sp.x * .5 * VW, -VW * .36, VW * .36); y = clamp(-_sp.y * .5 * VH, -VH * .3, VH * .3); } }
   const el = document.createElement('div'); el.className = 'pop' + (big ? ' big' : ''); el.textContent = txt; el.style.color = col; el.style.left = x + 'px'; el.style.top = y + 'px'; el.dataset.t0 = S.gt; $('pops').appendChild(el); if ($('pops').children.length > 8) $('pops').firstChild.remove(); }
@@ -226,7 +229,7 @@ function toast(s) { if (S.state !== 'play') return; const el = $('toast'); el.te
 function updateOverlays() { // timed on game time (frame exact in the video)
   const bn = $('banner'); if (bn.classList.contains('show')) { const a = S.gt - (+bn.dataset.t0); const k = a < .18 ? a / .18 : a > 1.9 ? Math.max(0, 1 - (a - 1.9) / .35) : 1; bn.style.opacity = k; bn.style.transform = `translate(-50%,-50%) scale(${(a < .18 ? 1.5 - .5 * a / .18 : 1 + a * .02).toFixed(3)})`; if (a > 2.3) bn.classList.remove('show'); }
   const ts = $('toast'); if (ts.classList.contains('show') && S.gt - (+ts.dataset.t0) > 2.4) ts.classList.remove('show');
-  const lc = $('lvCard'); if (lc.classList.contains('show') && S.gt - (+lc.dataset.t0) > 4.2) lc.classList.remove('show');
+  const lc = $('lvCard'); if (lc.classList.contains('show') && S.gt - (+lc.dataset.t0) > 3.2) lc.classList.remove('show');
   for (const el of [...$('pops').children]) { const a = S.gt - (+el.dataset.t0); if (a > 1.1) { el.remove(); continue; } el.style.opacity = a < .1 ? a / .1 : 1 - Math.max(0, (a - .6) / .5); el.style.transform = `translate(-50%,-50%) translateY(${-a * 46}px) scale(${a < .12 ? .6 + a / .12 * .4 : 1})`; }
   // the opening title: slams in huge, then recedes into the stars
   const op = $('opening'); if (S.state === 'intro' && S.titleT >= 0) { const a = S.introT - S.titleT; const sIn = a < .28 ? 3.2 - 2.2 * smooth(a / .28) : 1; const rec = smooth((a - 1.2) / 2.6);
