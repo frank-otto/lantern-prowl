@@ -38,7 +38,10 @@ export function moonTex() {
   const maria = [[180, 190, 70], [300, 160, 52], [320, 300, 80], [200, 330, 46], [260, 240, 34], [140, 280, 30]];
   for (const [x, y, r] of maria) { const m = k.createRadialGradient(x, y, 2, x, y, r); m.addColorStop(0, 'rgba(150,140,120,.55)'); m.addColorStop(1, 'rgba(150,140,120,0)'); k.fillStyle = m; k.beginPath(); k.arc(x, y, r, 0, 7); k.fill(); }
   for (let i = 0; i < 90; i++) { const a = R() * 7, rr = Math.sqrt(R()) * 230, x = 256 + Math.cos(a) * rr, y = 256 + Math.sin(a) * rr, r = 2 + R() * 9;
-    k.strokeStyle = 'rgba(120,110,95,.35)'; k.lineWidth = 1.5; k.beginPath(); k.arc(x, y, r, 0, 7); k.stroke(); k.fillStyle = 'rgba(255,255,245,.18)'; k.beginPath(); k.arc(x - r * .3, y - r * .3, r * .6, 0, 7); k.fill(); }
+    // soft craters (no hard outlines – they read as bubbles): a shaded bowl + a faint lit rim on the upper left
+    const cg = k.createRadialGradient(x + r * .2, y + r * .2, 0, x, y, r * 1.15); cg.addColorStop(0, 'rgba(128,116,98,.26)'); cg.addColorStop(.75, 'rgba(128,116,98,.12)'); cg.addColorStop(1, 'rgba(128,116,98,0)'); k.fillStyle = cg; k.beginPath(); k.arc(x, y, r * 1.15, 0, 7); k.fill();
+    const hg = k.createRadialGradient(x - r * .55, y - r * .55, 0, x - r * .55, y - r * .55, r * .8); hg.addColorStop(0, 'rgba(255,252,238,.16)'); hg.addColorStop(1, 'rgba(255,252,238,0)'); k.fillStyle = hg; k.beginPath(); k.arc(x - r * .55, y - r * .55, r * .8, 0, 7); k.fill(); }
+  { const lg = k.createRadialGradient(256, 256, 170, 256, 256, 250); lg.addColorStop(0, 'rgba(120,100,80,0)'); lg.addColorStop(1, 'rgba(120,100,80,.18)'); k.fillStyle = lg; k.beginPath(); k.arc(256, 256, 250, 0, 7); k.fill(); } // gentle limb darkening
   return tex(c, { rep: false }); }
 export function faceTex() { // carved jack-o'-lantern face (emissive map), centred on u = .75 of a sphere's UVs (its front)
   const [c, k] = cv(512, 256); k.fillStyle = '#000'; k.fillRect(0, 0, 512, 256); const cx = 384, cy = 128;

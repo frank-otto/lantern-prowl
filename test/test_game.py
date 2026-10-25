@@ -83,6 +83,8 @@ async def main():
         # leap visuals
         await ev(pg, '__lp.start("night", 0); __lp.auto(true); __lp.stepq(1/30, 120); __lp.fillMoon()'); await run_until(pg, '__lp.runner().state === "leap"', 900)
         a1 = await shot(pg, 'l1-leap.png', 40); await run_until(pg, '__lp.runner().ignited', 300); a2 = await shot(pg, 'l2-ignite.png', 30)
+        r = await ev(pg, '[__lp.W.rings.map(m => m.material.uniforms.map.value.wrapT === __lp._dbg.THREE.ClampToEdgeWrapping), __lp.rim(), __lp.runner().state]')
+        check('polish: skyline rings clamp the silhouette texture vertically (no black dashed line on the ring tops, WebKit) and the cat gets a moon rim in the leap', all(r[0]) and len(r[0]) == 2 and r[1] > .3, r)
         check('leap + ignite frames render, readable (no white-out glare)', white_share(a1) < .04 and white_share(a2) < .04 and mean(a2) > 30, (round(white_share(a1), 4), round(white_share(a2), 4), round(mean(a2), 1)))
         # ================= 3) hazards, lives, falls =================
         r = await ev(pg, '(() => { __lp.start("night", 2); __lp.auto(false); const R = __lp.runner(); const L0 = R.lives; let i = 0; for (; i < 3000 && R.state !== "dead"; i++) __lp.stepq(1/30, 1); return [L0, R.hits, R.falls, R.state, i]; })()')
@@ -147,6 +149,10 @@ async def main():
         ctx, pg, logs = await page(b, locale='de-DE')
         r = await ev(pg, '[__lp.S.lang, document.documentElement.lang, document.getElementById("btnSkip").textContent]')
         check('German browser → German texts automatically', r[0] == 'de' and r[1] == 'de' and 'spielen' in r[2].lower(), r)
+        r = await ev(pg, '(() => { __lp.endIntro(); __lp.start("night", 0); __lp.auto(true); __lp.stepq(1/30, 90); __lp.banner("x"); __lp.end("win"); return [document.getElementById("eName").value, document.getElementById("banner").classList.contains("show")]; })()')
+        await ev(pg, 'window.__txt.length = 0'); await ev(pg, '__lp.cardURL()'); txt = await ev(pg, 'window.__txt.join(" | ")')
+        check('German: default name is "Spieler" (end screen + card "von Spieler"), the card credit is German, no banner bleeds through the end screen', r[0] == 'Spieler' and not r[1] and 'von Spieler' in txt and 'Gebaut mit Grok Bot' in txt and 'Noch 5 Tage bis Halloween' in txt, (r, txt[:300]))
+        check('no console errors (German run)', not logs, logs[:4])
         await ctx.close()
         # ================= 11) static scans =================
         vis = open(ROOT + '/index.html', encoding='utf-8').read() + open(ROOT + '/src/i18n.js', encoding='utf-8').read()
@@ -156,6 +162,9 @@ async def main():
         m = re.findall(TM, vis_txt, re.I); check('no third-party game/film names in visible texts', not m, m[:5])
         src = ''.join(open(f, encoding='utf-8').read() for f in glob.glob(ROOT + '/src/*.js'))
         check('no synthesized beeps (no oscillators) – real recorded sounds only', 'createOscillator' not in src)
+        rev = [m for m in re.findall(r'smoothstep\(\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*,', src) if float(m[0]) >= float(m[1])]
+        pw = [m for m in re.findall(r'pow\(\s*([A-Za-z_][\w.]*)\s*,\s*[\d.]+\s*\)', src)]
+        check('GLSL: no reversed smoothstep edges (undefined → black artefacts on Safari/Metal); pow() only on clamped bases', not rev and all(v == 'm' for v in pw) and 'clamp(dot(vD, moonDir), 1e-4, 1.)' in src, (rev, pw))
         lic = os.listdir(ROOT + '/LICENSES'); check('LICENSES/ has font, three.js, sound credits', any('OFL' in x for x in lic) and any('three' in x.lower() for x in lic) and 'SOUNDS.md' in lic, lic)
         await b.close()
     print(f'\n{sum(R)}/{len(R)} checks passed'); sys.exit(0 if R and all(R) else 1)

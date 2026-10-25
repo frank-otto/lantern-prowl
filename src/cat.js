@@ -7,6 +7,14 @@ export function createCat(scene, soft) {
   const inner = new THREE.MeshStandardMaterial({ color: '#3a1a26', roughness: .7 });
   const eyeM = new THREE.MeshStandardMaterial({ color: '#1a1a00', emissive: '#c8ff3a', emissiveIntensity: 2.6, roughness: .2 });
   const pupilM = new THREE.MeshBasicMaterial({ color: '#000000' });
+  // moon rim: a thin cool fresnel edge, weighted to the sky-facing side (reads as moonlight from behind; brighter in the Moonlight Leap)
+  C.rimU = { rimC: { value: new THREE.Color(.36, .44, .9) }, rimK: { value: .05 }, rimP: { value: 4 } };
+  fur.onBeforeCompile = sh => { Object.assign(sh.uniforms, C.rimU);
+    sh.fragmentShader = 'uniform vec3 rimC; uniform float rimK, rimP;\n' + sh.fragmentShader.replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+      { vec3 nV = normalize(normal); float fr = 1. - clamp(dot(nV, normalize(vViewPosition)), 0., 1.); fr = fr * fr * (rimP > 3.5 ? fr * fr : fr);
+        vec3 upV = normalize((viewMatrix * vec4(0., 1., 0., 0.)).xyz); float w = .15 + .85 * clamp(dot(nV, upV) * .8 + .2, 0., 1.);
+        totalEmissiveRadiance += rimC * (fr * w * rimK); }`); };
+  fur.customProgramCacheKey = () => 'catfur';
   C.mats = [fur, inner, eyeM, pupilM]; C.fur = fur; C.eyeM = eyeM; C.geos = [];
   const G = g => (C.geos.push(g), g);
   const sph = G(new THREE.SphereGeometry(1, 24, 16)), cap = G(new THREE.CapsuleGeometry(.055, .26, 4, 10)), cone = G(new THREE.ConeGeometry(.075, .17, 4, 1)), seg = G(new THREE.CapsuleGeometry(.045, .11, 3, 8));
@@ -32,7 +40,7 @@ export function createCat(scene, soft) {
   C.tip = new THREE.Group(); C.tip.position.set(0, .16, 0); par.add(C.tip);
   const flameM = new THREE.SpriteMaterial({ map: soft, color: new THREE.Color(2.1, .95, .28), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }); C.mats.push(flameM);
   C.flame = new THREE.Sprite(flameM); C.flame.scale.set(.3, .42, 1); C.tip.add(C.flame);
-  const coreM = new THREE.SpriteMaterial({ map: soft, color: new THREE.Color(2.2, 1.7, .9), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }); C.mats.push(coreM);
+  const coreM = new THREE.SpriteMaterial({ map: soft, color: new THREE.Color(1.9, 1.3, .6), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }); C.mats.push(coreM);
   C.core = new THREE.Sprite(coreM); C.core.scale.set(.13, .18, 1); C.tip.add(C.core);
   C.light = new THREE.PointLight('#ffa448', 1.6, 7, 1.7); C.light.position.set(0, .25, .1); C.tip.add(C.light);
   C.tipWorld = new THREE.Vector3();
@@ -63,8 +71,9 @@ export function updateCat(C, st, dt) {
   C.blink -= dt; const bl = C.blink < 0 && C.blink > -.12 ? .15 : 1; if (C.blink < -.12) C.blink = 2.5 + Math.random() * 3;
   for (const s of [-1, 1]) C['eye' + s].scale.y = .03 * bl;
   C.eyeM.emissiveIntensity = 2.6 + (st.flash || 0) * 6;
+  { const lp = leap >= 0 ? Math.sin(Math.min(1, Math.max(0, leap)) * Math.PI) : 0; C.rimK = lerp(C.rimK ?? .05, .05 + lp * 1.15, Math.min(1, dt * 6)); C.rimU.rimK.value = C.rimK; }
   // the wisp flame: flickers, grows in the frenzy, turns violet in the shadow dash
-  const f = 1 + Math.sin((st.t || 0) * 23) * .08 + Math.sin((st.t || 0) * 37) * .06, big = 1 + (st.frenzy ? .6 : 0) + (st.flash || 0) * .8;
+  const f = 1 + Math.sin((st.t || 0) * 23) * .08 + Math.sin((st.t || 0) * 37) * .06, big = 1 + (st.frenzy ? .32 : 0) + (st.flash || 0) * .35;
   C.flame.scale.set(.3 * f * big, .44 * f * big, 1); C.core.scale.set(.11 * big, .16 * f * big, 1); C.light.intensity = (1.5 + Math.sin((st.t || 0) * 19) * .2) * big;
   const sp = st.spirit || 0; C.flame.material.color.setRGB(lerp(2.1, 1.2, sp), lerp(.95, .6, sp), lerp(.28, 2.4, sp)); C.light.color.setRGB(lerp(1, .6, sp), lerp(.64, .4, sp), lerp(.28, 1, sp));
   C.fur.sheenColor.setRGB(lerp(.54, .7, sp), lerp(.59, .4, sp), lerp(.85, 1, sp)); C.fur.emissive = C.fur.emissive || new THREE.Color(); C.fur.emissive.setRGB(sp * .08, 0, sp * .18);

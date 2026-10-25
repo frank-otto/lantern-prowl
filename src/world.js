@@ -65,8 +65,8 @@ export function createWorld(renderer) {
   W.sky = new THREE.Mesh(new THREE.SphereGeometry(520, 32, 16), new THREE.ShaderMaterial({ uniforms: skyU, side: THREE.BackSide, depthWrite: false, fog: false,
     vertexShader: 'varying vec3 vD; void main(){ vD = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }',
     fragmentShader: `varying vec3 vD; uniform vec3 moonDir; uniform float time, glow; void main(){ float h = vD.y; vec3 top = vec3(.025, .03, .085), mid = vec3(.09, .06, .17), hor = vec3(.23, .12, .22);
-      vec3 c = mix(hor, mid, smoothstep(-.02, .22, h)); c = mix(c, top, smoothstep(.2, .8, h)); float m = max(dot(vD, moonDir), 0.);
-      c += vec3(.55, .52, .62) * pow(m, 60.) * .9 * glow + vec3(.25, .22, .36) * pow(m, 8.) * .45 * glow; c = mix(c, vec3(.05, .03, .06), smoothstep(-.02, -.25, h)); gl_FragColor = vec4(c, 1.); }` }));
+      vec3 c = mix(hor, mid, smoothstep(-.02, .22, h)); c = mix(c, top, smoothstep(.2, .8, h)); float m = clamp(dot(vD, moonDir), 1e-4, 1.);
+      c += vec3(.55, .52, .62) * pow(m, 60.) * .9 * glow + vec3(.25, .22, .36) * pow(m, 8.) * .45 * glow; c = mix(c, vec3(.05, .03, .06), (1. - smoothstep(-.25, -.02, h))); gl_FragColor = vec4(c, 1.); }` }));
   W.sky.renderOrder = -10; W.sky.frustumCulled = false; scene.add(W.sky);
   // stars
   { const n = 2400, p = new Float32Array(n * 3), s = new Float32Array(n); for (let i = 0; i < n; i++) { const u = hash(i) * 2 - 1, a = hash(i + 9e3) * 6.283, y = Math.abs(u) * .95 + .03, r = Math.sqrt(1 - y * y); p.set([Math.cos(a) * r * 480, y * 480, Math.sin(a) * r * 480], i * 3); s[i] = .6 + hash(i + 7e3) * 1.8; }
@@ -92,10 +92,10 @@ export function createWorld(renderer) {
   W.ground = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), new THREE.MeshStandardMaterial({ color: '#141018', roughness: 1 })); W.ground.rotation.x = -Math.PI / 2; W.ground.position.y = -14; W.ground.receiveShadow = false; scene.add(W.ground);
   // distant skyline rings
   W.skyU = { uT: { value: 0 }, uT0: { value: 1e9 }, uO: { value: new THREE.Vector3() } };
-  W.rings = []; for (const [r, h, c, rep] of [[150, 44, '#120e22', 5], [235, 70, '#0e0b1c', 7]]) { const t = T.sky.clone(); t.needsUpdate = true; t.repeat.set(rep, 1); W.ownTex = (W.ownTex || []).concat(t);
+  W.rings = []; for (const [r, h, c, rep] of [[150, 44, '#120e22', 5], [235, 70, '#0e0b1c', 7]]) { const t = T.sky.clone(); t.wrapT = THREE.ClampToEdgeWrapping; t.needsUpdate = true; t.repeat.set(rep, 1); W.ownTex = (W.ownTex || []).concat(t);
     const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 64, 1, true), new THREE.ShaderMaterial({ uniforms: { map: { value: t }, uT: W.skyU.uT, uT0: W.skyU.uT0, uO: W.skyU.uO, col: { value: new THREE.Color(c) } }, side: THREE.BackSide, depthWrite: true, fog: false,
       vertexShader: 'uniform mat3 uvTransform; varying vec2 vUv; varying vec3 vW; void main(){ vUv = (uvTransform * vec3(uv, 1.)).xy; vec4 w = modelMatrix * vec4(position, 1.); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }',
-      fragmentShader: 'uniform sampler2D map; uniform float uT, uT0; uniform vec3 uO, col; varying vec2 vUv; varying vec3 vW; void main(){ vec4 s = texture2D(map, vUv); if (s.a < .4) discard; float d = distance(vW.xz, uO.xz); float ig = clamp(((uT - uT0) * 150. - d) / 30., 0., 1.); float w = max(s.r * .8, s.g * ig * 1.25); vec3 win = mix(vec3(1., .62, .25), vec3(1., .82, .45), fract(sin(dot(floor(vUv * vec2(400., 30.)), vec2(12.9898, 78.233))) * 43758.5453)); gl_FragColor = vec4(mix(col, win * 1.6, w), 1.); }' }));
+      fragmentShader: 'uniform sampler2D map; uniform float uT, uT0; uniform vec3 uO, col; varying vec2 vUv; varying vec3 vW; void main(){ vec4 s = texture2D(map, vUv); if (s.a < .4 || vUv.y > .992) discard; float d = distance(vW.xz, uO.xz); float ig = clamp(((uT - uT0) * 150. - d) / 30., 0., 1.); float w = max(s.r * .8, s.g * ig * 1.25); vec3 win = mix(vec3(1., .62, .25), vec3(1., .82, .45), fract(sin(dot(floor(vUv * vec2(400., 30.)), vec2(12.9898, 78.233))) * 43758.5453)); gl_FragColor = vec4(mix(col, win * 1.6, w), 1.); }' }));
     m.material.uniforms.uvTransform = { value: (t.updateMatrix(), t.matrix) };
     m.position.y = -14 + h / 2 - 2; m.renderOrder = -5; m.frustumCulled = false; scene.add(m); W.rings.push(m); }
   // skyline lanterns: points that ignite in the wave

@@ -138,5 +138,30 @@ body[data-more="1"][data-state=menu] #top { visibility: hidden; } /* the sheet h
 /* WebKit (iOS Safari) can paint backdrop-filter children of an opacity:0 parent → really hide what is hidden */
 #toast:not(.show), #lvCard:not(.show) { visibility: hidden; }
 /* portrait phones: the level hint is a compact strip at the top edge (under HUD + moon), so the cat and the lane ahead stay free */
-#lvCard.compact { top: calc(max(8px, env(safe-area-inset-top)) + 104px); bottom: auto; padding: 6px 12px 7px; border-radius: 14px; width: max-content; max-width: calc(100vw - 128px); }
+#lvCard.compact { top: calc(max(8px, env(safe-area-inset-top)) + 116px); bottom: auto; padding: 6px 12px 7px; border-radius: 14px; width: max-content; max-width: calc(100vw - 128px); }
 #lvCard.compact small { font-size: 15px; line-height: 1.2; } #lvCard.compact div { font-size: 13px; margin-top: 2px; line-height: 1.25; } #lvCard.compact em { font-size: 12px; margin-top: 2px; line-height: 1.25; }
+
+/* ===== polish 25.10. ===== */
+/* safe areas (iPhone landscape notch / rounded corners) for the HUD on the left */
+#hud { left: max(14px, env(safe-area-inset-left)); } #prog, #pw { left: max(14px, env(safe-area-inset-left)); }
+/* big banners (MOONLIGHT LEAP, THE TOWN IGNITES): never wider than the screen, never under the button column (JS shrinks a single long word to fit) */
+#banner { width: max-content; max-width: calc(100vw - 32px); white-space: normal; text-align: center; line-height: 1.08; }
+@media (max-aspect-ratio: 17/20) { #banner { max-width: calc(100vw - 128px); font-size: clamp(26px, 8.2vw, 46px); } #hud, #prog, #pw { left: max(8px, env(safe-area-inset-left)); } }
+@media (max-height: 520px) and (min-aspect-ratio: 1/1) { /* phone landscape */
+  /* the moon meter goes under the round buttons on the right, so it never overlaps the HUD chips */
+  #moon { left: auto; right: max(12px, env(safe-area-inset-right)); transform: none; top: calc(max(12px, env(safe-area-inset-top)) + 52px); padding: 4px 10px 4px 5px; }
+  #moon .disc { width: 28px; height: 28px; } #hud { gap: 5px; } .chip.wide { max-width: 150px; } .chip.wide b { overflow: hidden; text-overflow: ellipsis; display: block; max-width: 100%; }
+  #banner { top: 34%; font-size: clamp(26px, 6.4vw, 52px); max-width: calc(100vw - 120px); }
+  /* level hint: compact strip under the HUD, the cat and the lane stay free */
+  /* level hint: compact card in the lower left corner – the cat runs in the middle lane and the lane ahead stays free */
+  #lvCard.compact { top: auto; bottom: max(10px, env(safe-area-inset-bottom)); left: max(14px, env(safe-area-inset-left)); transform: none; text-align: left; width: max-content; max-width: min(300px, calc(50vw - 64px)); padding: 6px 12px 7px; }
+  #lvCard.compact small { font-size: 14px; } #lvCard.compact div { font-size: 12.5px; } #lvCard.compact em { font-size: 12px; }
+  /* end screen: two columns, everything fits without scrolling */
+  #end { left: 50%; transform: translate(-50%, -50%); width: min(700px, calc(100vw - 24px)); max-height: calc(100% - 12px); display: grid; grid-template-columns: 1fr 1fr; column-gap: 18px; align-items: center; padding: 12px 18px; overflow: hidden; }
+  #end .score { font-size: 42px; } #end .stars { font-size: 28px; margin: 2px 0; } #end h2 { margin: 2px 0 4px; font-size: 24px; } #end .kicker { margin-bottom: 2px; }
+  #end .stats { gap: 1px; margin: 6px 0 0; font-size: 13px; } #end .name { margin-top: 0; } #end .big { margin: 6px 0; min-height: 46px; padding: 9px 14px; } #end .row { margin-top: 6px; }
+}
+@media (max-height: 340px) and (min-aspect-ratio: 1/1) { #end .stats { font-size: 12px; } #end .score { font-size: 36px; } #end h2 { font-size: 21px; } #end .kicker { letter-spacing: .2em; } }
+/* short portrait phones (iPhone SE): the win screen with NEXT NIGHT fits without scrolling */
+@media (max-height: 620px) and (max-aspect-ratio: 17/20) { #end { padding: 14px 16px 12px; } #end h2 { margin: 2px 0; font-size: 24px; } #end .score { font-size: 40px; } #end .stars { font-size: 28px; margin: 2px 0; }
+  #end .stats { gap: 1px; margin: 6px 0; font-size: 13px; } #end .name { margin-top: 2px; } #end .big { margin: 6px 0; min-height: 46px; padding: 9px 14px; } #end .row { margin-top: 6px; } }

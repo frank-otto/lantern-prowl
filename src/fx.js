@@ -10,7 +10,7 @@ export function createFX(scene, soft, smokeTex) {
   geo.setAttribute('position', new THREE.BufferAttribute(F.pos, 3)); geo.setAttribute('color', new THREE.BufferAttribute(F.col, 3)); geo.setAttribute('size', new THREE.BufferAttribute(F.size, 1)); geo.setAttribute('alpha', new THREE.BufferAttribute(F.alpha, 1));
   const mat = new THREE.ShaderMaterial({ uniforms: { map: { value: soft }, scale: { value: 800 } }, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, vertexColors: true,
     vertexShader: `attribute float size; attribute float alpha; varying vec3 vC; varying float vA; uniform float scale; void main(){ vC = color; vec4 mv = modelViewMatrix * vec4(position,1.); vA = alpha * smoothstep(.35, 1.1, -mv.z); gl_PointSize = min(size * scale / -mv.z, 40.); gl_Position = projectionMatrix * mv; }`,
-    fragmentShader: `uniform sampler2D map; varying vec3 vC; varying float vA; void main(){ vec4 t = texture2D(map, gl_PointCoord); gl_FragColor = vec4(vC, t.a * vA); }` });
+    fragmentShader: `uniform sampler2D map; varying vec3 vC; varying float vA; void main(){ vec4 t = texture2D(map, gl_PointCoord); gl_FragColor = vec4(vC, t.a * (.5 + .5 * t.a) * vA); }` });
   F.points = new THREE.Points(geo, mat); F.points.frustumCulled = false; scene.add(F.points); F.geo = geo; F.mat = mat;
   F.puffs = []; for (let i = 0; i < 40; i++) { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: smokeTex, color: '#8a7a9a', transparent: true, opacity: 0, depthWrite: false })); s.visible = false; scene.add(s); F.puffs.push({ s, life: 0, max: 1, v: new THREE.Vector3(), g: 1 }); }
   return F;
@@ -39,7 +39,7 @@ export function updateFX(F, dt, scale) {
     F.vel[i * 3 + 1] -= F.grav[i] * dt; F.vel[i * 3] *= (1 - dt * 1.2); F.vel[i * 3 + 2] *= (1 - dt * 1.2);
     F.pos[i * 3] += F.vel[i * 3] * dt; F.pos[i * 3 + 1] += F.vel[i * 3 + 1] * dt; F.pos[i * 3 + 2] += F.vel[i * 3 + 2] * dt;
     if (F.pos[i * 3 + 1] < F.floor) { F.pos[i * 3 + 1] = F.floor; F.vel[i * 3 + 1] *= -.3; }
-    F.alpha[i] = Math.min(1, k * 2.5); F.size[i] = F.s0[i] * (.4 + k * .6);
+    F.alpha[i] = Math.min(1, k * 2.5) * Math.min(1, .2 + (F.max[i] - F.life[i]) * 6); // birth ramp: 170 sparks born on one spot must not add up to a white-hot glare blob F.size[i] = F.s0[i] * (.4 + k * .6);
   }
   F.geo.attributes.position.needsUpdate = true; F.geo.attributes.color.needsUpdate = true; F.geo.attributes.size.needsUpdate = true; F.geo.attributes.alpha.needsUpdate = true;
   for (const p of F.puffs) { if (p.life <= 0) continue; p.life -= dt; const k = 1 - p.life / p.max; p.s.position.addScaledVector(p.v, dt); p.v.multiplyScalar(1 - dt * 1.2);

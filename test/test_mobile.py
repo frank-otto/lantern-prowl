@@ -58,6 +58,17 @@ async def run(p, eng, dev, land, loc):
     hc = await ev(pg, """(() => { const e = document.getElementById('lvCard'), c = e.getBoundingClientRect(), k = __lp.C.g.getWorldPosition(new __lp._dbg.THREE.Vector3()), q = __lp.screen(k.x, k.y + .4, k.z), q2 = __lp.screen(k.x, k.y + .4, k.z - 8);
       const hit = p => p.x > c.left - 10 && p.x < c.right + 10 && p.y > c.top - 30 && p.y < c.bottom + 30; return [e.classList.contains('compact'), Math.round(c.height), Math.round(c.top), hit(q), hit(q2)]; })()""")
     if not land: check(f'{T} portrait: Night 1 hint is a compact card at the top (≤ 22 % of the height) and covers neither the cat nor the lane ahead', hc[0] and hc[1] <= H * .22 and hc[2] < H * .3 and not hc[3] and not hc[4], hc)
+    else:
+        hx = await ev(pg, "Math.round(document.getElementById('lvCard').getBoundingClientRect().right)")
+        check(f'{T} landscape: Night 1 hint is a compact card in the lower left corner (≤ 36 % of the height, left half) and covers neither the cat nor the lane ahead', hc[0] and hc[1] <= H * .36 and hx <= W / 2 and not hc[3] and not hc[4], hc + [hx])
+    ovl = await ev(pg, """(() => { const R = s => { const r = document.querySelector(s).getBoundingClientRect(); return [s, r.left, r.top, r.right, r.bottom]; }; const L = ['#hud', '#moon', '#top', '#prog', '#lvCard'].map(R);
+      const bad = []; for (let i = 0; i < L.length; i++) for (let j = i + 1; j < L.length; j++) { const a = L[i], b = L[j]; if (a[1] < b[3] - 1 && b[1] < a[3] - 1 && a[2] < b[4] - 1 && b[2] < a[4] - 1) bad.push(a[0] + '×' + b[0]); }
+      const off = L.filter(a => a[1] < -1 || a[3] > innerWidth + 1).map(a => a[0]); return bad.concat(off); })()""")
+    check(f'{T} in-game HUD: chips, moon meter, round buttons, progress bar and hint card never overlap each other or leave the screen', not ovl, ovl)
+    bn = await ev(pg, """(() => { const T = document.getElementById('top').getBoundingClientRect(), out = []; for (const k of ['leap', 'ignites', 'frenzy', 'finish']) { const s = { leap: ['MOONLIGHT LEAP!', 'MONDSCHEINSPRUNG!'], ignites: ['🎃 THE TOWN IGNITES!', '🎃 DIE STADT ERSTRAHLT!'], frenzy: ['🔥 LANTERN FRENZY ×2', '🔥 LATERNENRAUSCH ×2'], finish: ['🕛 Midnight! The clock tower!', '🕛 Mitternacht! Der Uhrturm!'] }[k][__lp.S.lang === 'de' ? 1 : 0];
+      __lp.banner(s); const e = document.getElementById('banner'), r = e.getBoundingClientRect(), sc = parseFloat(e.style.transform.match(/scale[(]([0-9.]+)/)?.[1] || 1); const w = r.width / sc, h = r.height / sc, cx = (r.left + r.right) / 2, cy = (r.top + r.bottom) / 2, x0 = cx - w / 2, x1 = cx + w / 2, y0 = cy - h / 2, y1 = cy + h / 2;
+      const clip = e.scrollWidth > e.clientWidth + 1, over = x0 < T.right - 1 && T.left < x1 - 1 && y0 < T.bottom - 1 && T.top < y1 - 1; if (x0 < 2 || x1 > innerWidth - 2 || clip || over) out.push([k, Math.round(x0), Math.round(x1), clip, over]); } document.getElementById('banner').classList.remove('show'); return out; })()""")
+    check(f'{T} big banners (MOONLIGHT LEAP, THE TOWN IGNITES, …) fit on screen, never clipped, never under the round buttons', not bn, bn)
     await pg.wait_for_timeout(1500); await pg.screenshot(path=f'{OUT}{tag}-1-night1.png')
     j0 = await ev(pg, '__lp.log.length'); await pg.touchscreen.tap(W / 2, H * .6)
     jumped = await until(pg, f"__lp.log.slice({j0}).some(e => /wing|flap|whoosh|swish|fwoosh/.test(e.n)) || __lp.runner().air", 4)
@@ -102,9 +113,13 @@ async def run(p, eng, dev, land, loc):
     check(f'{T} tap PLAY starts the night', pl)
     # end screen fits and is tappable
     await ev(pg, '__lp.end("dead")'); await pg.wait_for_timeout(900); await pg.screenshot(path=f'{OUT}{tag}-4-end.png')
-    if land: await ev(pg, "document.getElementById('end').scrollTop = 0")
-    hit = dict(await ev(pg, f'({HIT})(["#btnAgain", "#btnMenu", "#btnCard"])')); bad = {k: v for k, v in hit.items() if v != 'ok'}
-    check(f'{T} end screen: run again, menu, save card tappable' + (' (landscape: panel scrolls)' if land else ''), not bad or (land and all(v.startswith('off-screen') for v in bad.values())), bad or hit)
+    hit = dict(await ev(pg, f'({HIT})(["#btnAgain", "#btnMenu", "#btnCard", "#btnShare", "#eName"])')); bad = {k: v for k, v in hit.items() if v != 'ok'}
+    es = await ev(pg, "(() => { const e = document.getElementById('end'), r = e.getBoundingClientRect(); return [e.scrollHeight <= e.clientHeight + 1, r.top >= -1 && r.bottom <= innerHeight + 1, document.getElementById('banner').classList.contains('show') || document.getElementById('lvCard').classList.contains('show'), [...e.querySelectorAll('button, input')].filter(b => b.offsetParent && (b.getBoundingClientRect().height < 44 || b.getBoundingClientRect().width < 44)).map(b => b.id)]; })()")
+    check(f'{T} end screen fits WITHOUT scrolling; run again, menu, save card, share, name all on screen, ≥ 44 px, tappable; no banner / hint card bleeding through', not bad and es[0] and es[1] and not es[2] and not es[3], (bad or hit, es))
+    await ev(pg, '__lp.end("quit")'); await ev(pg, '__lp.start("night", 0)'); await pg.wait_for_timeout(300); await ev(pg, '__lp.end("win")'); await pg.wait_for_timeout(900); await pg.screenshot(path=f'{OUT}{tag}-5-win.png')
+    hit = dict(await ev(pg, f'({HIT})(["#btnNext", "#btnAgain", "#btnMenu", "#btnCard", "#btnShare"])')); bad = {k: v for k, v in hit.items() if v != 'ok'}
+    es = await ev(pg, "(() => { const e = document.getElementById('end'); return [e.scrollHeight <= e.clientHeight + 1, document.getElementById('eName').value, __lp.S.lang]; })()")
+    check(f'{T} win screen (with NEXT NIGHT) fits without scrolling, every button tappable; default name is localized', not bad and es[0] and es[1] == ('Spieler' if es[2] == 'de' else 'Player'), (bad or hit, es))
     check(f'{T} no console errors', not errs, errs[:3])
     await b.close()
 async def main():

@@ -14,6 +14,7 @@ import * as A from './audio.js';
 import { T } from './i18n.js';
 
 const CREDIT_TXT = 'Built with Grok Bot · 5 days to Halloween 🎃';
+const defName = () => S.lang === 'de' ? 'Spieler' : 'Player'; const shownName = () => S.name === 'Player' || S.name === 'Spieler' ? defName() : S.name;
 const $ = id => document.getElementById(id);
 const ls = { get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
 const lerp = (a, b, k) => a + (b - a) * k, clamp = (v, a, b) => Math.max(a, Math.min(b, v)), smooth = x => x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x), fin = (v, d = 0) => Number.isFinite(v) ? v : d;
@@ -83,7 +84,8 @@ function start(mode = 'night', ni) {
   if (mode === 'duel' && S.player !== 1) { S.player = 0; S.duel = [null, null]; S.duelSeed = 4040; }
   resetVisuals(); newRun(false); S.state = 'play'; S.result = null; S.more = false; S.auto = !!window.__lpAuto; S.hintT = 0; S.lastLives = RN.lives;
   music.start('game', S.gt + .05); A.sfx.ui(); showLevelCard(); seedFX(1234 + S.ni); setUI(); applyLang(); }
-function endRun(res) { if (S.state !== 'play') return; S.result = res; S.endT = S.gt;
+function clearBanners() { $('banner').classList.remove('show'); $('toast').classList.remove('show'); $('lvCard').classList.remove('show'); }
+function endRun(res) { if (S.state !== 'play') return; S.result = res; S.endT = S.gt; clearBanners();
   if (S.mode === 'duel') { S.duel[S.player] = { score: RN.score, lit: RN.lit, of: TR.lanterns, chain: RN.bestChain, leaps: RN.leaps, d: RN.d, res };
     if (S.player === 0) { S.state = 'handover'; S.player = 1; A.sfx.turn(); setUI(); applyLang(); return; } }
   const N = nightOf(), lit = RN.lit / Math.max(1, TR.lanterns); S.stars = res === 'win' ? (lit >= .75 && RN.leaps > 0 ? 3 : lit >= .55 ? 2 : 1) : 0;
@@ -92,7 +94,7 @@ function endRun(res) { if (S.state !== 'play') return; S.result = res; S.endT = 
   if (S.mode === 'endless') { if (RN.score > (p.e || 0)) { p.e = RN.score; S.newBest = true; } saveProg(p); }
   S.state = 'end'; if (res === 'win') { A.sfx.win(); for (let i = 0; i < S.stars; i++) after(.45 + i * .35, () => A.sfx.star(i)); } else if (res !== 'quit') A.sfx.fail();
   music.start('menu', S.gt + .8); showEnd(); setUI(); }
-function toMenu() { const wasIntro = S.state === 'intro'; S.state = 'menu'; S.more = false; S.player = 0; if (!wasIntro || !RN || RN.state !== 'run' && RN.state !== 'leap') { resetVisuals(); newRun(true); startCine(true); } S.auto = true; S.titleT = -1; $('opening').style.opacity = 0;
+function toMenu() { const wasIntro = S.state === 'intro'; clearBanners(); S.state = 'menu'; S.more = false; S.player = 0; if (!wasIntro || !RN || RN.state !== 'run' && RN.state !== 'leap') { resetVisuals(); newRun(true); startCine(true); } S.auto = true; S.titleT = -1; $('opening').style.opacity = 0;
   hideLevelCard(); music.start('menu', S.gt + .1); setUI(); applyLang(); }
 function startIntro() { S.state = 'intro'; S.introT = 0; S.titleT = -1; resetVisuals(); seedFX(77); newRun(true); S.auto = true; music.stop(); A.sfx.intro(); startCine(true); setUI(); applyLang(); }
 function endIntro() { $('opening').style.opacity = 0; S.titleT = -1; }
@@ -197,7 +199,7 @@ function setUI() { const st = S.state; const b = document.body; b.dataset.state 
   const N = nightOf(); $('progFill').style.width = (Number.isFinite(N.len) ? clamp(RN.d / TR.finishD === Infinity ? RN.d / N.len : RN.d / N.len, 0, 1) * 100 : 100) + '%'; $('prog').classList.toggle('endless', !Number.isFinite(N.len));
   if (Number.isFinite(N.len)) $('progTxt').textContent = ''; else $('progTxt').textContent = Math.floor(RN.d) + ' m';
   $('pw').textContent = (RN.pow.broom > 0 ? '🧹' : '') + (RN.pow.magnet > 0 ? '🧲' : '') + (RN.pow.shadow > 0 ? '🟣' : '') + (RN.frenzy > 0 ? '🔥' : ''); }
-function applyLang() { document.documentElement.lang = S.lang; document.querySelectorAll('[data-t]').forEach(el => el.textContent = t(el.dataset.t)); $('btnLang').textContent = S.lang === 'en' ? 'DE' : 'EN'; $('btnLang').setAttribute('aria-label', S.lang === 'en' ? 'Deutsch' : 'English');
+function applyLang() { document.documentElement.lang = S.lang; if ($('eName') && /^(Player|Spieler)$/.test($('eName').value)) $('eName').value = defName(); document.querySelectorAll('[data-t]').forEach(el => el.textContent = t(el.dataset.t)); $('btnLang').textContent = S.lang === 'en' ? 'DE' : 'EN'; $('btnLang').setAttribute('aria-label', S.lang === 'en' ? 'Deutsch' : 'English');
   $('keysTip').textContent = t('keysHint'); $('oSub').textContent = t('countdown');
   $('btnKids').classList.toggle('on', S.kids); $('btnKids').setAttribute('aria-pressed', S.kids); document.querySelectorAll('#diff button').forEach(b => b.classList.toggle('on', b.dataset.d === S.diff)); $('diff').classList.toggle('off', S.kids);
   $('btnSound').textContent = A.isMuted() ? '🔇' : '🔊'; $('btnSound2').textContent = t(A.isMuted() ? 'soundOff' : 'soundOn'); qLabels(); $('btnSkip').textContent = '▶ ' + (isTouch ? (S.lang === 'de' ? 'Tippen zum Spielen' : 'Tap to play') : (S.lang === 'de' ? 'Klicken zum Spielen' : 'Click to play'));
@@ -215,16 +217,17 @@ function showEnd() { const duel = S.mode === 'duel', r = S.result; let title;
   const p = prog(); $('eBest').textContent = duel ? '' : S.newBest ? t('newBest') : `${t('bestL')}: ${fmt(S.mode === 'endless' ? p.e || 0 : p.b[S.ni] || 0)}`;
   $('eStats').innerHTML = duel && S.duel[0] && S.duel[1] ? [0, 1].map(i => `<div><b>${t(i ? 'p2' : 'p1')}</b> 🎃 ${S.duel[i].lit}/${S.duel[i].of} · 🔗 ${S.duel[i].chain} · 🌕 ${S.duel[i].leaps}</div>`).join('')
     : `<div>🎃 ${t('stLit')}: <b>${RN.lit}/${TR.lanterns}</b></div><div>🔗 ${t('stChain')}: <b>${RN.bestChain}</b></div><div>🌕 ${t('stLeaps')}: <b>${RN.leaps}</b></div><div>🐈‍⬛ ${t('stNear')}: <b>${RN.nears}</b></div><div>📏 ${t('stDist')}: <b>${Math.floor(RN.d)} m</b></div>`;
-  $('btnNext').style.display = S.mode === 'night' && r === 'win' && S.ni < NIGHTS.length - 1 ? '' : 'none'; $('btnAgain').textContent = duel ? t('againD') : t('again'); $('eName').value = S.name; }
+  $('btnNext').style.display = S.mode === 'night' && r === 'win' && S.ni < NIGHTS.length - 1 ? '' : 'none'; $('btnAgain').textContent = duel ? t('againD') : t('again'); $('eName').value = shownName(); }
 function showLevelCard() { const N = nightOf(); $('lcT').textContent = S.mode === 'duel' ? `${t(S.player ? 'p2' : 'p1')} · ${t('duelT')}` : S.mode === 'endless' ? t('n_endless') : `${t('night')} ${S.ni + 1} · ${nightName()}`;
-  const el = $('lvCard'), compact = innerWidth < innerHeight * .85; el.classList.toggle('compact', compact); // portrait phones: small card at the top edge, short text
+  const el = $('lvCard'), compact = innerWidth < innerHeight * .85 || (innerHeight <= 520 && innerWidth > innerHeight); el.classList.toggle('compact', compact); // portrait phones: small card at the top edge, short text
   $('lcG').textContent = t('hintGoal'); const first = S.ni === 0 || S.mode !== 'night';
   $('lcTip').textContent = compact ? (first ? t(isTouch ? 'hintShort' : 'hintKeys') : t('tip_' + N.id)) : (first ? t(isTouch ? 'hintTouch' : 'hintKeys') + ' · ' : '') + t('tip_' + N.id);
   el.classList.add('show'); el.dataset.t0 = S.gt; }
 function hideLevelCard() { $('lvCard').classList.remove('show'); }
 function popAt(txt, col, big, at) { (window.__pops = window.__pops || []).push(txt); let x = 0, y = -VH * .12; if (at) { _sp.copy(at).project(camera); if (_sp.z < 1) { x = clamp(_sp.x * .5 * VW, -VW * .36, VW * .36); y = clamp(-_sp.y * .5 * VH, -VH * .3, VH * .3); } }
   const el = document.createElement('div'); el.className = 'pop' + (big ? ' big' : ''); el.textContent = txt; el.style.color = col; el.style.left = x + 'px'; el.style.top = y + 'px'; el.dataset.t0 = S.gt; $('pops').appendChild(el); if ($('pops').children.length > 8) $('pops').firstChild.remove(); }
-function banner(s) { if (!s) return; (window.__banners = window.__banners || []).push(s); const el = $('banner'); el.textContent = s; el.dataset.t0 = S.gt; el.classList.add('show'); }
+function banner(s) { if (!s) return; (window.__banners = window.__banners || []).push(s); const el = $('banner'); el.textContent = s; el.style.fontSize = ''; el.dataset.t0 = S.gt; el.classList.add('show');
+  const sw = el.scrollWidth, cw = el.clientWidth; if (sw > cw + 1) el.style.fontSize = (parseFloat(getComputedStyle(el).fontSize) * cw / sw * .97).toFixed(1) + 'px'; }
 function toast(s) { if (S.state !== 'play') return; const el = $('toast'); el.textContent = s; el.classList.add('show'); el.dataset.t0 = S.gt; }
 function updateOverlays() { // timed on game time (frame exact in the video)
   const bn = $('banner'); if (bn.classList.contains('show')) { const a = S.gt - (+bn.dataset.t0); const k = a < .18 ? a / .18 : a > 1.9 ? Math.max(0, 1 - (a - 1.9) / .35) : 1; bn.style.opacity = k; bn.style.transform = `translate(-50%,-50%) scale(${(a < .18 ? 1.5 - .5 * a / .18 : 1 + a * .02).toFixed(3)})`; if (a > 2.3) bn.classList.remove('show'); }
@@ -262,7 +265,7 @@ for (const ev of ['touchend', 'click', 'keydown', 'pointerup']) window.addEventL
 window.addEventListener('resize', resize);
 // ---------------- share card (1080×1350, no URL) ----------------
 async function makeCard() {
-  S.name = ($('eName').value || '').trim().slice(0, 18) || 'Player'; ls.set('lp-name', S.name); try { await document.fonts.load('700 40px Fredoka'); } catch (e) {}
+  S.name = ($('eName').value || '').trim().slice(0, 18) || defName(); ls.set('lp-name', S.name); try { await document.fonts.load('700 40px Fredoka'); } catch (e) {}
   const CW = 1080, CH = 1350; renderer.setPixelRatio(1); renderer.setSize(CW, CH, false); composer.setPixelRatio(1); composer.setSize(CW, CH);
   const old = { a: camera.aspect, f: camera.fov, p: camera.position.clone(), q: camera.quaternion.clone() }; const md = W.moonDir.clone(), msc = W.moonScale;
   camera.aspect = CW / CH; camera.fov = 52; camera.position.set(RN.x + 2.2, RN.y + 1.6, -RN.d + 4.6); camera.lookAt(RN.x - .6, RN.y + 2.6, -RN.d - 10); camera.updateProjectionMatrix(); camera.updateMatrixWorld();
@@ -277,11 +280,11 @@ async function makeCard() {
   if (duel) { k.font = Fo(700, 112); txt(`${fmt(S.duel[0].score)} : ${fmt(S.duel[1].score)}`, CW / 2, 1040, '#fff0c0', 'rgba(30,16,4,.9)', 14); k.font = Fo(600, 50); txt($('eTitle').textContent, CW / 2, 1110, '#ffb35a'); k.font = Fo(500, 34); txt(`${t('p1')} · ${t('p2')}`, CW / 2, 182, '#ffffff'); }
   else { k.font = Fo(600, 46); txt(S.mode === 'endless' ? `${t('n_endless')} · ${Math.floor(RN.d)} m` : `${t('night')} ${S.ni + 1} · ${nightName()}`, CW / 2, 962, '#ffd0a0'); k.font = Fo(700, 150); txt(fmt(RN.score), CW / 2, 1104, '#fff0c0', 'rgba(30,16,4,.9)', 16);
     if (S.result === 'win' && S.mode === 'night') { k.font = Fo(700, 70); txt('★'.repeat(S.stars) + '☆'.repeat(3 - S.stars), CW / 2, 1182, '#ffcf4a', 'rgba(40,20,0,.9)', 8); } else { k.font = Fo(600, 46); txt($('eTitle').textContent || '', CW / 2, 1178, '#ffb35a'); }
-    k.font = Fo(500, 34); txt(`${t('by')} ${S.name}`, CW / 2, 182, '#ffffff'); }
+    k.font = Fo(500, 34); txt(`${t('by')} ${shownName()}`, CW / 2, 182, '#ffffff'); }
   const lp = duel ? S.duel[0].leaps + S.duel[1].leaps : RN.leaps; if (lp > 0) { k.save(); k.translate(CW - 172, 330); k.rotate(-.16); k.fillStyle = 'rgba(30,26,60,.92)'; k.strokeStyle = '#ffe6a0'; k.lineWidth = 6; k.beginPath(); k.arc(0, 0, 118, 0, 7); k.fill(); k.stroke();
     k.font = Fo(700, 58); txt('🌕', 0, -16, '#fff', 'rgba(0,0,0,0)', 0); k.font = Fo(700, 22); txt(S.lang === 'de' ? 'MONDSPRUNG' : 'MOON LEAP', 0, 30, '#ffe6a0', 'rgba(0,0,0,0)', 0); k.font = Fo(700, 34); txt('x' + lp, 0, 72, '#fff', 'rgba(0,0,0,0)', 0); k.restore(); }
   const st = duel ? `🎃 ${S.duel[0].lit}:${S.duel[1].lit} · 🔗 ${S.duel[0].chain}:${S.duel[1].chain}` : `${S.kids ? t('kidsT') : t(S.diff)} · 🎃 ${RN.lit}/${TR.lanterns} · 🔗 ${RN.bestChain} · 🌕 ${RN.leaps}`;
-  k.font = Fo(600, 34); txt(st, CW / 2, 1240, '#ffe08a'); k.font = Fo(600, 40); txt(t('cardTag'), CW / 2, 1288, '#ffd0a0'); k.font = Fo(400, 30); txt(CREDIT_TXT, CW / 2, 1330, 'rgba(255,255,255,.92)');
+  k.font = Fo(600, 34); txt(st, CW / 2, 1240, '#ffe08a'); k.font = Fo(600, 40); txt(t('cardTag'), CW / 2, 1288, '#ffd0a0'); k.font = Fo(400, 30); txt(t('credit') || CREDIT_TXT, CW / 2, 1330, 'rgba(255,255,255,.92)');
   window.__lpCard = { w: c.width, h: c.height }; return c; }
 async function saveCard(share) { const c = await makeCard(); const blob = await new Promise(r => c.toBlob(r, 'image/png')); const file = new File([blob], 'my-lantern-prowl.png', { type: 'image/png' });
   if (share && navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], text: `Lantern Prowl · ${t('cardTag')}` }); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
@@ -342,6 +345,6 @@ window.__lp = { S, W, C, P, F, step: (dt, n = 1) => { for (let i = 0; i < n; i++
   card: saveCard, cardURL: async () => (await makeCard()).toDataURL('image/jpeg', .9), fps, fpsTick, advance, last: () => last, play: A.play, sfx: A.sfx, audioState: A.state,
   mem: () => ({ ...renderer.info.memory, programs: renderer.info.programs ? renderer.info.programs.length : 0 }),
   screen: (x, y, z) => { _sp.set(x, y, z).project(camera); return { x: (_sp.x * .5 + .5) * VW, y: (-_sp.y * .5 + .5) * VH, z: _sp.z }; }, cam: () => ({ p: camera.position.toArray(), fov: camera.fov }),
-  fillMoon: () => { RN.meter = RN.D.cap; }, sparks: () => { let n = 0; for (let i = 0; i < F.life.length; i++) if (F.life[i] > 0) n++; return n; },
+  fillMoon: () => { RN.meter = RN.D.cap; }, banner, rim: () => C.rimU.rimK.value, sparks: () => { let n = 0; for (let i = 0; i < F.life.length; i++) if (F.life[i] > 0) n++; return n; },
   _dbg: { scene, camera, composer, bloom, THREE } };
 document.body.classList.add('ready');
