@@ -83,6 +83,8 @@ async def main():
         # leap visuals
         await ev(pg, '__lp.start("night", 0); __lp.auto(true); __lp.stepq(1/30, 120); __lp.fillMoon()'); await run_until(pg, '__lp.runner().state === "leap"', 900)
         a1 = await shot(pg, 'l1-leap.png', 40); await run_until(pg, '__lp.runner().ignited', 300); a2 = await shot(pg, 'l2-ignite.png', 30)
+        r = await ev(pg, '(() => { const F = __lp.F; let n = 0, s = 0; for (let i = 0; i < F.n; i++) if (F.life[i] > 0) { n++; s = Math.max(s, F.size[i]); } return [n, s]; })()')
+        check('sparks / fireworks of the ignite are alive AND have a visible size (regression: a comment once swallowed the size update)', r[0] > 100 and r[1] > .1, r)
         r = await ev(pg, '[__lp.W.rings.map(m => m.material.uniforms.map.value.wrapT === __lp._dbg.THREE.ClampToEdgeWrapping), __lp.rim(), __lp.runner().state]')
         check('polish: skyline rings clamp the silhouette texture vertically (no black dashed line on the ring tops, WebKit) and the cat gets a moon rim in the leap', all(r[0]) and len(r[0]) == 2 and r[1] > .3, r)
         check('leap + ignite frames render, readable (no white-out glare)', white_share(a1) < .04 and white_share(a2) < .04 and mean(a2) > 30, (round(white_share(a1), 4), round(white_share(a2), 4), round(mean(a2), 1)))

@@ -73,7 +73,8 @@ async def run(p, eng, dev, land, loc):
     j0 = await ev(pg, '__lp.log.length'); await pg.touchscreen.tap(W / 2, H * .6)
     jumped = await until(pg, f"__lp.log.slice({j0}).some(e => /wing|flap|whoosh|swish|fwoosh/.test(e.n)) || __lp.runner().air", 4)
     check(f'{T} the run is playable by touch (tap = jump)', jumped, await ev(pg, '[__lp.runner().state, __lp.runner().air]'))
-    check(f'{T} the hint card fades on the first input (or after ~3 s) and is then visibility:hidden', await until(pg, "getComputedStyle(document.getElementById('lvCard')).visibility === 'hidden'", 10), await ev(pg, "[getComputedStyle(document.getElementById('lvCard')).visibility, __lp.S.gt - (+document.getElementById('lvCard').dataset.t0)]"))
+    # wait up to 45 s real time below: the 3.2 s fade is GAME time, which crawls on a loaded software-GL box
+    check(f'{T} the hint card fades on the first input (or after ~3 s) and is then visibility:hidden', await until(pg, "getComputedStyle(document.getElementById('lvCard')).visibility === 'hidden'", 45), await ev(pg, "[getComputedStyle(document.getElementById('lvCard')).visibility, __lp.S.gt - (+document.getElementById('lvCard').dataset.t0)]"))
     hud = dict(await ev(pg, f'({HIT})(["#btnQuit", "#btnSound", "#btnLang"])')); badh = {k: v for k, v in hud.items() if v != 'ok'}
     check(f'{T} in-game buttons (✕ menu, sound, DE/EN) are tappable, nothing covers them', not badh, badh or hud)
     # ---------- 2) the start screen: one big PLAY, everything else behind the gear ----------

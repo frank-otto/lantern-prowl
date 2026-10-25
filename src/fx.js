@@ -39,7 +39,7 @@ export function updateFX(F, dt, scale) {
     F.vel[i * 3 + 1] -= F.grav[i] * dt; F.vel[i * 3] *= (1 - dt * 1.2); F.vel[i * 3 + 2] *= (1 - dt * 1.2);
     F.pos[i * 3] += F.vel[i * 3] * dt; F.pos[i * 3 + 1] += F.vel[i * 3 + 1] * dt; F.pos[i * 3 + 2] += F.vel[i * 3 + 2] * dt;
     if (F.pos[i * 3 + 1] < F.floor) { F.pos[i * 3 + 1] = F.floor; F.vel[i * 3 + 1] *= -.3; }
-    F.alpha[i] = Math.min(1, k * 2.5) * Math.min(1, .2 + (F.max[i] - F.life[i]) * 6); // birth ramp: 170 sparks born on one spot must not add up to a white-hot glare blob F.size[i] = F.s0[i] * (.4 + k * .6);
+    const rb = Math.min(1, (F.max[i] - F.life[i]) * 5); F.alpha[i] = Math.min(1, k * 2.5) * rb * rb; F.size[i] = F.s0[i] * (.4 + k * .6) * (.35 + .65 * rb); // birth ramp: 170 sparks born on one spot must not add up to a white-hot glare blob
   }
   F.geo.attributes.position.needsUpdate = true; F.geo.attributes.color.needsUpdate = true; F.geo.attributes.size.needsUpdate = true; F.geo.attributes.alpha.needsUpdate = true;
   for (const p of F.puffs) { if (p.life <= 0) continue; p.life -= dt; const k = 1 - p.life / p.max; p.s.position.addScaledVector(p.v, dt); p.v.multiplyScalar(1 - dt * 1.2);
